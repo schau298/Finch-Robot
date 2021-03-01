@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System;
 using System.Collections.Generic;
@@ -10,12 +10,12 @@ namespace Project_FinchControl
 {
     // **************************************************
     //
-    // Title: Finch Control - Menu Starter
-    // Description: The Talent Show
+    // Title: Finch Control
+    // Description: The Talent Show and Data Recorder
     // Application Type: Console
     // Author: Schaub, Dylan
     // Dated Created: 2/12/2021
-    // Last Modified: 2/17/2021
+    // Last Modified: 2/28/2021
     //
     // **************************************************
     class Program
@@ -40,8 +40,8 @@ namespace Project_FinchControl
 
         static void SetTheme()
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.BackgroundColor = ConsoleColor.DarkGray;
+            Console.ForegroundColor = ConsoleColor.Black;
+            Console.BackgroundColor = ConsoleColor.Cyan;
         }
 
 
@@ -91,7 +91,7 @@ namespace Project_FinchControl
                         break;
 
                     case "c":
-
+                        DataRecorderDisplayMenuScreen(finchRobot);
                         break;
 
                     case "d":
@@ -120,6 +120,167 @@ namespace Project_FinchControl
 
             } while (!quitApplication);
         }
+
+
+
+        #region DATA RECORDER
+
+
+        static void DataRecorderDisplayMenuScreen(Finch finchRobot)
+        {
+            
+            int numberOfDataPoints = 0;
+            double dataPointFrequency = 0;
+            double[] temperature = null;
+
+            Console.CursorVisible = true;
+
+            bool quitDataRecorder = false;
+            string menuChoice;
+
+            do 
+
+            {
+                DisplayScreenHeader("Data Recorder Menu");
+
+                
+                Console.WriteLine("\ta) Number of Data Points");
+                Console.WriteLine("\tb) Frequency of Data Points");
+                Console.WriteLine("\tc) Get Data");
+                Console.WriteLine("\td) Show Data");
+                Console.WriteLine($"\tq) Main Menu");
+                Console.Write("\t\tEnter Choice:");
+                menuChoice = Console.ReadLine().ToLower();
+
+                switch (menuChoice)
+                {
+                    case "a":
+                        numberOfDataPoints = DataRecorderDisplayGetNumberOfDataPoints();
+                        break;
+
+                    case "b":
+                        dataPointFrequency = DataRecorderDisplayGetDataPointFrequency();
+                        break;
+
+                    case "c":
+                        temperature = DataRecorderDisplayGetData(numberOfDataPoints, dataPointFrequency, finchRobot);
+                        break;
+
+                    case "d":
+                        DataRecorderDisplayGetData(temperature);
+                        break;
+                    
+                    case "q":
+                        quitDataRecorder = true;
+                        break;
+
+                    default:
+                        Console.WriteLine();
+                        Console.WriteLine("\tPlease enter a letter for the menu choice.");
+                        DisplayContinuePrompt();
+                        break;
+                }
+            } while (!quitDataRecorder);
+        }
+
+        private static int DataRecorderDisplayGetNumberOfDataPoints()
+        {
+            Console.CursorVisible = true;
+            DisplayScreenHeader("Number of data points");
+
+            Console.Write("\n\tEnter the number of data points: ");
+            string userResponse = Console.ReadLine();
+
+            int.TryParse(userResponse, out int numberOfDataPoints); 
+
+            DisplayContinuePrompt();
+            return numberOfDataPoints;
+        }
+
+        static double DataRecorderDisplayGetDataPointFrequency()
+        {
+            Console.CursorVisible = true;
+            DisplayScreenHeader("Frequency of data points in seconds:");
+
+            double.TryParse(Console.ReadLine(), out double dataPointFrequency); 
+
+            DisplayContinuePrompt();
+            return dataPointFrequency;
+        }
+
+
+
+        static void DataRecorderDisplayGetData(double[] temperature)
+        {
+            DisplayScreenHeader("Show Data");
+
+            DataRecorderDisplayTable(temperature);
+
+            DisplayContinuePrompt();
+        }
+
+        static void DataRecorderDisplayTable(double[] temperature)
+        {
+            Console.WriteLine(
+                "Recording #".PadLeft(15) +
+                "Temp".PadLeft(15)
+                );
+            Console.WriteLine(
+                "***********".PadLeft(15) +
+                "***********".PadLeft(15)
+                );
+
+            //
+            // display Table
+            //
+
+            for (int index = 0; index < temperature.Length; index++)
+            {
+                Console.WriteLine(
+                (index + 1).ToString().PadLeft(15) +
+                temperature[index].ToString("n2").PadLeft(15)
+                );
+            }
+        }
+
+
+        static double[] DataRecorderDisplayGetData(int numberOfDataPoints, double dataPointFrequency,
+            Finch finchRobot)
+        {
+            
+            double[] temperature = new double[numberOfDataPoints];
+
+            DisplayScreenHeader("Get Data");
+            Console.WriteLine($"\tNumber of data points: {numberOfDataPoints}");
+            Console.WriteLine($"\tData point frequency: {dataPointFrequency}");
+            Console.WriteLine();
+            Console.WriteLine("\tThe finch robot is ready to begin recording the temperature data.");
+            DisplayContinuePrompt();
+
+            for (int index = 0; index < numberOfDataPoints; index++)
+            {
+                temperature[index] = finchRobot.getTemperature();
+   
+                Console.WriteLine($"\tReading {index + 1}: {temperature[index].ToString("n2")}");
+                int waitInSeconds = (int)(dataPointFrequency * 1000);
+                finchRobot.wait(waitInSeconds);
+            }
+            DisplayContinuePrompt();
+            DisplayScreenHeader("Get Data");
+
+            Console.WriteLine();
+            Console.WriteLine("\t Table of Temperature");
+            Console.WriteLine();
+            DataRecorderDisplayTable(temperature);
+
+
+            DisplayContinuePrompt();
+
+            return temperature;
+        }
+
+        #endregion
+
 
 
         #region TALENT SHOW
