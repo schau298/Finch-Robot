@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System;
-using System.Collections.Generic;
 using System.IO;
 using FinchAPI;
 using System.Linq;
@@ -28,11 +26,11 @@ namespace Project_FinchControl
     //
     // Title: Finch Control
     // Description: The Talent Show, Data Recorder, Light Alarm System,
-    // User Programming 
+    // User Programming, Persistence
     // Application Type: Console
     // Author: Schaub, Dylan
     // Dated Created: 2/12/2021
-    // Last Modified: 3/15/2021
+    // Last Modified: 3/25/2021
     //
     // **************************************************
     class Program
@@ -47,6 +45,9 @@ namespace Project_FinchControl
             SetTheme();
 
             DisplayWelcomeScreen();
+
+            DisplayLoginRegister();
+
             DisplayMenuScreen();
             DisplayClosingScreen();
         }
@@ -57,9 +58,14 @@ namespace Project_FinchControl
 
         static void SetTheme()
         {
-            Console.ForegroundColor = ConsoleColor.Black;
-            Console.BackgroundColor = ConsoleColor.Cyan;
+            (ConsoleColor foregroundColor, ConsoleColor backgroundColor) themeColors;
+            Console.CursorVisible = true;
+            themeColors = ThemeReadColorSelection();
+            Console.ForegroundColor = themeColors.foregroundColor;
+            Console.BackgroundColor = themeColors.backgroundColor;
         }
+
+        static string userName;
 
 
 
@@ -89,6 +95,7 @@ namespace Project_FinchControl
                 Console.WriteLine("\td) Alarm System");
                 Console.WriteLine("\te) User Programming");
                 Console.WriteLine("\tf) Disconnect Finch Robot");
+                Console.WriteLine("\tg) Theme Settings");
                 Console.WriteLine("\tq) Quit");
                 Console.Write("\t\tEnter Choice:");
 
@@ -123,6 +130,10 @@ namespace Project_FinchControl
                         DisplayDisconnectFinchRobot(finchRobot);
                         break;
 
+                    case "g":
+                        DisplaySetTheme();
+                        break;
+
                     case "q":
                         DisplayDisconnectFinchRobot(finchRobot);
                         quitApplication = true;
@@ -138,6 +149,380 @@ namespace Project_FinchControl
             } while (!quitApplication);
         }
 
+
+
+        #region LOGIN REGISTER
+        /// <summary>
+        /// *****************************************************************
+        /// *                 Login OR Register Screen                      *
+        /// *****************************************************************
+        /// </summary>
+        static void DisplayLoginRegister()
+        {
+            DisplayScreenHeader("Login/Register");
+
+            Console.Write("\tAre you a registered user [ yes | no ]?");
+            if (Console.ReadLine().ToLower() == "yes")
+            {
+                DisplayLogin();
+            }
+            else
+            {
+                DisplayRegisterUser();
+                DisplayLogin();
+            }
+        }
+
+        /// <summary>
+        /// *****************************************************************
+        /// *                          Login Screen                         *
+        /// *****************************************************************
+        /// </summary>
+        static void DisplayLogin()
+        {
+            //string userName;
+            string password;
+
+            bool validLogin;
+
+            do
+            {
+                DisplayScreenHeader("Login");
+
+                Console.WriteLine();
+                Console.Write("\tEnter your user name:");
+                userName = Console.ReadLine();
+                Console.Write("\tEnter your password:");
+                password = Console.ReadLine();
+
+                validLogin = IsValidLoginInfo(userName, password);
+
+                Console.WriteLine();
+                if (validLogin)
+                {
+                    Console.WriteLine("\tYou are now logged in.");
+                }
+                else
+                {
+                    Console.WriteLine("\tIt appears either the user name or password is incorrect.");
+                    Console.WriteLine("\tPlease try again.");
+                }
+
+                DisplayContinuePrompt();
+            } while (!validLogin);
+        }
+
+        /// <summary>
+        /// check user login
+        /// </summary>
+        /// <param name="userName">user name entered</param>
+        /// <param name="password">password entered</param>
+        /// <returns>true if valid user</returns>
+        static bool IsValidLoginInfo(string userName, string password)
+        {
+            List<(string userName, string password, string finchName)> registeredUserLoginInfo = new List<(string userName, string password, string finchName)>();
+            bool validUser = false;
+
+            registeredUserLoginInfo = ReadLoginInfoData();
+
+
+            foreach ((string userName, string password, string finchName) userLoginInfo in registeredUserLoginInfo)
+            {
+                if ((userLoginInfo.userName == userName) && (userLoginInfo.password == password))
+                {
+                    validUser = true;
+                    break;
+                }
+            }
+
+            return validUser;
+        }
+
+        /// <summary>
+        /// *****************************************************************
+        /// *                       Register Screen                         *
+        /// *****************************************************************
+        /// </summary>
+        static void DisplayRegisterUser()
+        {
+            string userName;
+            string password;
+            string finchName;
+            DisplayScreenHeader("Register");
+
+            Console.Write("\tEnter your user name:");
+            userName = Console.ReadLine();
+            Console.Write("\tEnter your password:");
+            password = Console.ReadLine();
+            Console.Write("\tName your Finch Robot:");
+            finchName = Console.ReadLine();
+
+            WriteLoginInfoData(userName, password, finchName);
+
+            Console.WriteLine();
+            Console.WriteLine("\tYou entered the following information and it has be saved.");
+            Console.WriteLine($"\tUser name: {userName}");
+            Console.WriteLine($"\tPassword: {password}");
+            Console.WriteLine($"\tFinch name: {finchName}");
+            DisplayContinuePrompt();
+        }
+
+
+        static List<(string userName, string password, string finchName)> ReadLoginInfoData()
+        {
+            string dataPath = @"Data/UserData.txt";
+
+            string[] loginInfoArray;
+            (string userName, string password, string finchName) loginInfoTuple;
+
+            List<(string userName, string password, string finchName)> registeredUserLoginInfo = new List<(string userName, string password, string finchName)>();
+
+            loginInfoArray = File.ReadAllLines(dataPath);
+
+
+            foreach (string loginInfoText in loginInfoArray)
+            {
+
+                loginInfoArray = loginInfoText.Split(',');
+
+                loginInfoTuple.userName = loginInfoArray[0];
+                loginInfoTuple.password = loginInfoArray[1];
+                loginInfoTuple.finchName = loginInfoArray[2];
+                registeredUserLoginInfo.Add(loginInfoTuple);
+
+            }
+
+            return registeredUserLoginInfo;
+        }
+
+
+        static void WriteLoginInfoData(string userName, string password, string finchName)
+        {
+            string dataPath = @"Data/UserData.txt";
+            string loginInfoText;
+
+            loginInfoText = userName + "," + password + "," + finchName + "\n";
+
+
+            File.AppendAllText(dataPath, loginInfoText);
+        }
+
+
+        #endregion LOGIN REGISTER
+
+
+
+
+        #region USER THEME
+        /// <summary>
+        /// setup the console theme
+        /// </summary>
+        static void DisplaySetTheme()
+        {
+            (ConsoleColor foregroundColor, ConsoleColor backgroundColor) themeColors;
+            bool colorsChosen = false;
+            Console.CursorVisible = true;
+            themeColors = ThemeReadColorSelection();
+            Console.ForegroundColor = themeColors.foregroundColor;
+            Console.BackgroundColor = themeColors.backgroundColor;
+            Console.Clear();
+
+            DisplayScreenHeader("Theme Chooser:");
+            Console.WriteLine($"\n\t The current foreground color is: {Console.ForegroundColor}");
+            Console.WriteLine($"\t The current background color is: {Console.BackgroundColor}\n");
+
+            do
+            {
+                Console.Write($"\t {userName} Would you like to change the current theme colors? (yes/no) ");
+                string userResponse = Console.ReadLine().ToLower();
+                switch (userResponse)
+                {
+                    case "yes":
+                        themeColors.foregroundColor = ThemeGetForegroundColor();
+                        themeColors.backgroundColor = ThemeGetBackgroundColor();
+                        Console.ForegroundColor = themeColors.foregroundColor;
+                        Console.BackgroundColor = themeColors.backgroundColor;
+                        Console.Clear();
+                        DisplayScreenHeader("New Theme Colors");
+                        Console.WriteLine($"\t Foreground color is set to {Console.ForegroundColor}");
+                        Console.WriteLine($"\t Background color is set to {Console.BackgroundColor}\n");
+                        Console.WriteLine($"\t {userName} Keep color selections?");
+                        if (Console.ReadLine().ToLower() == "yes")
+                        {
+                            colorsChosen = true;
+                            WriteThemeData(themeColors.foregroundColor, themeColors.backgroundColor);
+                        }
+                        break;
+
+                    case "no":
+                        colorsChosen = false;
+                        break;
+
+                    default:
+                        Console.WriteLine($"\t {userName} Please enter yes or no");
+                        break;
+                }
+
+
+            } while (!colorsChosen);
+        }
+
+        /// <summary>
+        ///       Set background color
+        /// </summary>
+        /// <returns></returns>
+        static ConsoleColor ThemeGetBackgroundColor()
+        {
+            Console.Clear();
+            ConsoleColor userColor;
+            int count = 0;
+            bool validColor;
+            Console.CursorVisible = true;
+            DisplayScreenHeader("New Background Color");
+            Console.WriteLine("\t Available colors are:");
+
+            foreach (string colorOptions in Enum.GetNames(typeof(ConsoleColor)))
+            {
+                Console.WriteLine($"\t{count}: {colorOptions.ToLower()}");
+                count++;
+            }
+            do
+            {
+                Console.WriteLine();
+                Console.WriteLine("\t Enter a new background color");
+                Console.Write("\t ");
+                validColor = Enum.TryParse<ConsoleColor>(Console.ReadLine(), true, out userColor);
+
+                if (!validColor)
+                {
+                    Console.WriteLine($"\t {userName} That is not an option, try again.");
+                }
+
+                else
+                {
+                    validColor = true;
+                }
+            } while (!validColor);
+            ///
+            ///     Feedback 
+            /// 
+            string catchColor = userColor.ToString();
+            _ = ThemeCatchException(out _);
+            Console.WriteLine("\t Press any key to continue");
+            Console.ReadKey();
+            return userColor;
+        }
+        /// <summary>
+        ///      Sets Foreground color
+        /// </summary>
+        /// <returns></returns>
+        static ConsoleColor ThemeGetForegroundColor()
+        {
+            Console.CursorVisible = true;
+            Console.Clear();
+            ConsoleColor userColor;
+            int count = 0;
+            bool validColor;
+            DisplayScreenHeader("New foreground Color");
+            Console.WriteLine("\t   Valid colors are:");
+            foreach (string colorOptions in Enum.GetNames(typeof(ConsoleColor)))
+            {
+                Console.WriteLine($"\t {count}: {colorOptions.ToLower()}");
+                count++;
+            }
+            do
+            {
+                Console.WriteLine();
+                Console.WriteLine("\t Set foreground color");
+                Console.Write("\t ");
+                validColor = Enum.TryParse<ConsoleColor>(Console.ReadLine(), true, out userColor);
+
+                if (!validColor)
+                {
+                    Console.WriteLine($"\t {userName}That is not a valid color, Please try again");
+                }
+                else
+                {
+                    validColor = true;
+                }
+            } while (!validColor);
+            ///
+            ///   Feedback
+            /// 
+            string exceptionMessage;
+            string catchColor = userColor.ToString();
+            catchColor = ThemeCatchException(out exceptionMessage);
+            Console.WriteLine();
+            Console.WriteLine($"\t *{exceptionMessage}*");
+            Console.WriteLine();
+            Console.WriteLine("\t Press any key to continue");
+            Console.ReadKey();
+            return userColor;
+        }
+
+
+        /// <summary>
+        ///             Feedback/catch exception area
+        /// </summary>
+        /// <param name="exceptionMessage"></param>
+        /// <returns></returns>
+        static string ThemeCatchException(out string exceptionMessage)
+        {
+            string path = @"Data/Theme.txt";
+            string userColor;
+
+            try
+            {
+                userColor = File.ReadAllText(path);
+                exceptionMessage = "Colors Updated";
+            }
+            catch (DirectoryNotFoundException)
+            {
+                exceptionMessage = "Cannot find directory location";
+            }
+            catch (FileNotFoundException)
+            {
+                exceptionMessage = "Cannot find file";
+            }
+            catch (Exception)
+            {
+                exceptionMessage = "Error: Cannot locate file";
+            }
+            return exceptionMessage;
+        }
+
+
+        /// <summary>
+        ///       Read the Theme info
+        /// </summary>
+        /// <returns></returns>
+        static (ConsoleColor foregroundColor, ConsoleColor backgroundColor) ThemeReadColorSelection()
+        {
+            string themeDataPath = @"Data/Theme.txt";
+            string[] themeColors;
+            ConsoleColor foregroundColor;
+            ConsoleColor backgroundColor;
+
+            themeColors = File.ReadAllLines(themeDataPath);
+            Enum.TryParse(themeColors[0], true, out foregroundColor);
+            Enum.TryParse(themeColors[1], true, out backgroundColor);
+
+            return (foregroundColor, backgroundColor);
+        }
+
+        /// <summary>
+        ///      Write Theme info 
+        /// </summary>
+        /// <param name="foregroundColor"></param>
+        /// <param name="backgroundColor"></param>
+
+        static void WriteThemeData(ConsoleColor foregroundColor, ConsoleColor backgroundColor)
+        {
+            string themeDataPath = @"Data/Theme.txt";
+            File.WriteAllText(themeDataPath, foregroundColor.ToString() + "\n");
+            File.AppendAllText(themeDataPath, backgroundColor.ToString());
+        }
+        #endregion
 
 
 
@@ -167,7 +552,7 @@ namespace Project_FinchControl
                 Console.WriteLine("\tc) Get Data");
                 Console.WriteLine("\td) Show Data");
                 Console.WriteLine($"\tq) Main Menu");
-                Console.Write("\t\tEnter Choice:");
+                Console.Write("\t\t Enter Choice:");
                 menuChoice = Console.ReadLine().ToLower();
 
                 switch (menuChoice)
@@ -335,7 +720,7 @@ namespace Project_FinchControl
                 Console.WriteLine("\td) Set Time to Monitor");
                 Console.WriteLine("\te) Set Alarm");
                 Console.WriteLine($"\tq) Main Menu");
-                Console.Write("\t\tEnter Choice:");
+                Console.Write("\t\t  Enter Choice:");
                 menuChoice = Console.ReadLine().ToLower();
 
                 switch (menuChoice)
@@ -602,7 +987,7 @@ namespace Project_FinchControl
                 Console.WriteLine("\tc) View Commands");
                 Console.WriteLine("\td) Execute Commands");
                 Console.WriteLine("\tq) Quit");
-                Console.Write("\t\tEnter Choice:");
+                Console.Write("\t\t Enter Choice:");
                 menuChoice = Console.ReadLine().ToLower();
                 switch (menuChoice)
                 {
@@ -835,15 +1220,6 @@ namespace Project_FinchControl
 
 
 
-
-
-
-
-
-
-
-
-
         static void GetValidInteger(string valid1, int valid2, int valid3, out int motorSpeed)  
         {
             bool validResponse = false;
@@ -918,7 +1294,7 @@ namespace Project_FinchControl
                 Console.WriteLine("\tc) Mixing It Up");
                 Console.WriteLine("\td) ");
                 Console.WriteLine("\tq) Main Menu");
-                Console.Write("\t\tEnter Choice:");
+                Console.Write("\t\t Enter Choice:");
                 menuChoice = Console.ReadLine().ToLower();
 
                 //
@@ -1140,6 +1516,7 @@ namespace Project_FinchControl
             DisplayContinuePrompt();
         }
 
+        
         /// <summary>
         /// *****************************************************************
         /// *                     Closing Screen                            *
@@ -1188,7 +1565,8 @@ namespace Project_FinchControl
             Console.WriteLine();
         }
 
-        #endregion
+        
 
     }
 }
+#endregion USER INTERFACE
